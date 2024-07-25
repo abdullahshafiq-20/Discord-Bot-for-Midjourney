@@ -2,6 +2,8 @@
 
 Welcome to the Discord AI Image Generator Bot repository! This bot automates the process of generating AI images using Discord's `/imagine` command. 🎨✨
 
+![Description of the GIF](https://firebasestorage.googleapis.com/v0/b/blog-react-74910.appspot.com/o/vid.gif?alt=media&token=c1855ef2-f723-4f2d-a77d-b540b1725814)
+
 ## 🌟 Features
 
 - 🔐 Automated login to Discord
