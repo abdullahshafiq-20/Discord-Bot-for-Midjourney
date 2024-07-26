@@ -1,6 +1,7 @@
 import time
 import random
 import pandas as pd
+from colorama import Fore, Style
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.service import Service
@@ -17,8 +18,8 @@ time_delay_loading_discord_login = (2, 4)
 time_delay_after_login = (4, 5)
 time_delay_loading_channel = (2, 4)
 time_delay_after_typing_imagine = 1
-time_delay_between_words_min = 0.00001
-time_delay_between_words_max = 0.00002
+time_delay_between_words_min = 0.000000001
+time_delay_between_words_max = 0.000000002
 time_delay_after_typing_message = 2
 time_delay_retry_sending_message_min = 2
 time_delay_retry_sending_message_max = 4
@@ -27,10 +28,14 @@ time_delay_after_message_sent_max = 5
 time_delay_human_like_browsing_min = 0.01
 time_delay_human_like_browsing_max = 0.03
 
+time_delay_after_10_prompts_min = 100  # 4 minutes in seconds
+time_delay_after_10_prompts_max = 120  # 6 minutes in seconds
+
+
 email = ""
 password = ""
 channel_url = ""
-css_selector = ""
+css_selector = "#app-mount > div.appAsidePanelWrapper_bd26cc > div.notAppAsidePanel_bd26cc > div.app_bd26cc > div > div.layers_d4b6c5.layers_a01fb1 > div > div > div > div > div.chat_a7d72e > div.content_a7d72e > main > form > div > div > div.scrollableContainer_d0696b.themedBackground_d0696b > div > div.textArea_d0696b.textAreaSlate_d0696b.slateContainer_e52116 > div > div.markup_f8f345.editor_a552a6.slateTextArea_e52116.fontSize16Padding_d0696b > div"
 csv_file = "ai_image_prompts.csv"
 
 
@@ -93,9 +98,9 @@ def human_like_browsing(driver):
         time.sleep(random.uniform(0.5, 2))
 
     except WebDriverException as e:
-        print(f"WebDriver exception during human-like browsing: {e}")
+        print(f"WebDriver exception during human-like browsing")
     except Exception as e:
-        print(f"An unexpected error occurred during human-like browsing: {e}")
+        print(f"An unexpected error occurred during human-like browsing")
 
 
 def login_to_discord(driver, email, password):
@@ -148,7 +153,7 @@ def send_message(driver, content):
             time.sleep(time_delay_after_typing_message)
 
             input_element.send_keys(Keys.RETURN)
-            print(f"Message sent successfully: /imagine {content[:50]}...")
+            print(f"{Fore.GREEN}Message sent successfully: /imagine {content[:50]}...")
             counter = 0
             max_attempts = 0
             return True
@@ -175,18 +180,30 @@ def main():
     random_sleep(*time_delay_loading_channel)
 
     data = pd.read_csv(csv_filename)
+    prompt_count = 0
     for index, row in data.iterrows():
         content = row[0]
         if pd.isna(content) or content == "":
             break
         if send_message(driver, content):
-            print(f"Message {index} sent successfully: {content}")
+            print(f"{Fore.GREEN}Message {index + 1 } ent successfully: {content}")
+            prompt_count += 1
         else:
             print(f"Failed to send message {index}: {content}")
+        
         human_like_browsing(driver)
         random_sleep(time_delay_after_message_sent_min, time_delay_after_message_sent_max)
+        
+        # Check if 10 prompts have been sent
+        if prompt_count % 10 == 0:
+            delay_time = random.uniform(time_delay_after_10_prompts_min, time_delay_after_10_prompts_max)
+            print(f"10 prompts sent. Waiting for approximately {delay_time:.2f} seconds...")
+            random_sleep(time_delay_after_10_prompts_min, time_delay_after_10_prompts_max)
+    
+    print(f"Finished sending {prompt_count} prompts.")
+    print("Exiting...")
+    time.sleep(5)
     driver.quit()
-
 
 if __name__ == "__main__":
     main()
