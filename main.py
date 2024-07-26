@@ -27,6 +27,10 @@ time_delay_after_message_sent_max = 5
 time_delay_human_like_browsing_min = 0.01
 time_delay_human_like_browsing_max = 0.03
 
+time_delay_after_10_prompts_min = 240  # 4 minutes in seconds
+time_delay_after_10_prompts_max = 360  # 6 minutes in seconds
+
+
 email = ""
 password = ""
 channel_url = ""
@@ -175,18 +179,27 @@ def main():
     random_sleep(*time_delay_loading_channel)
 
     data = pd.read_csv(csv_filename)
+    prompt_count = 0
     for index, row in data.iterrows():
         content = row[0]
         if pd.isna(content) or content == "":
             break
         if send_message(driver, content):
             print(f"Message {index} sent successfully: {content}")
+            prompt_count += 1
         else:
             print(f"Failed to send message {index}: {content}")
+        
         human_like_browsing(driver)
         random_sleep(time_delay_after_message_sent_min, time_delay_after_message_sent_max)
-    driver.quit()
+        
+        # Check if 10 prompts have been sent
+        if prompt_count % 10 == 0:
+            delay_time = random.uniform(time_delay_after_10_prompts_min, time_delay_after_10_prompts_max)
+            print(f"10 prompts sent. Waiting for approximately {delay_time:.2f} seconds...")
+            random_sleep(time_delay_after_10_prompts_min, time_delay_after_10_prompts_max)
 
+    driver.quit()
 
 if __name__ == "__main__":
     main()
