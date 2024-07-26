@@ -25,7 +25,7 @@ Before you begin, ensure you have met the following requirements:
 Install the required packages using:
 
 ```
-pip install time random pandas selenium
+pip install pandas selenium colorama
 ```
 ```
 pip install --upgrade pandas selenium
