@@ -1,6 +1,7 @@
 import time
 import random
 import pandas as pd
+import pickle
 from colorama import Fore, Style
 from selenium import webdriver
 from selenium.webdriver.common.by import By
@@ -12,6 +13,7 @@ from selenium.common.exceptions import MoveTargetOutOfBoundsException
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import NoSuchElementException, StaleElementReferenceException, TimeoutException, InvalidElementStateException, WebDriverException
+
 
 # Time delay variables
 time_delay_loading_discord_login = (2, 4)
@@ -28,8 +30,8 @@ time_delay_after_message_sent_max = 5
 time_delay_human_like_browsing_min = 0.01
 time_delay_human_like_browsing_max = 0.03
 
-time_delay_after_10_prompts_min = 100  # 4 minutes in seconds
-time_delay_after_10_prompts_max = 120  # 6 minutes in seconds
+time_delay_after_10_prompts_min = 240  # 4 minutes in seconds
+time_delay_after_10_prompts_max = 360  # 6 minutes in seconds
 
 
 email = ""
@@ -37,6 +39,21 @@ password = ""
 channel_url = ""
 css_selector = "#app-mount > div.appAsidePanelWrapper_bd26cc > div.notAppAsidePanel_bd26cc > div.app_bd26cc > div > div.layers_d4b6c5.layers_a01fb1 > div > div > div > div > div.chat_a7d72e > div.content_a7d72e > main > form > div > div > div.scrollableContainer_d0696b.themedBackground_d0696b > div > div.textArea_d0696b.textAreaSlate_d0696b.slateContainer_e52116 > div > div.markup_f8f345.editor_a552a6.slateTextArea_e52116.fontSize16Padding_d0696b > div"
 csv_file = "ai_image_prompts.csv"
+
+# ... [Keep all the existing constants and imports] ...
+
+def save_checkpoint(index):
+    with open('checkpoint.pkl', 'wb') as f:
+        pickle.dump(index, f)
+
+def load_checkpoint():
+    try:
+        with open('checkpoint.pkl', 'rb') as f:
+            return pickle.load(f)
+    except FileNotFoundError:
+        return 0
+    
+
 
 
 def random_sleep(min_time, max_time):
@@ -166,8 +183,12 @@ def send_message(driver, content):
     return False
 
 
+
 def main():
     csv_filename = csv_file
+
+    start_index = load_checkpoint()
+    print(f"Starting from prompt index: {start_index}")
 
     driver = chrome_opt()
     driver.get('https://discord.com/login')
@@ -182,29 +203,38 @@ def main():
     data = pd.read_csv(csv_filename)
     prompt_count = 0
     for index, row in data.iterrows():
+        if index < start_index:
+            continue
         content = row[0]
         if pd.isna(content) or content == "":
             break
-        if send_message(driver, content):
-            print(f"{Fore.GREEN}Message {index + 1 } ent successfully: {content}")
-            prompt_count += 1
-        else:
-            print(f"Failed to send message {index}: {content}")
-        
-        human_like_browsing(driver)
-        random_sleep(time_delay_after_message_sent_min, time_delay_after_message_sent_max)
-        
-        # Check if 10 prompts have been sent
-        if prompt_count % 10 == 0:
-            delay_time = random.uniform(time_delay_after_10_prompts_min, time_delay_after_10_prompts_max)
-            print(f"10 prompts sent. Waiting for approximately {delay_time:.2f} seconds...")
-            random_sleep(time_delay_after_10_prompts_min, time_delay_after_10_prompts_max)
+        try:
+            if send_message(driver, content):
+                print(f"{Fore.GREEN}Message {index + 1} sent successfully: {content}")
+                prompt_count += 1
+                save_checkpoint(index + 1)
+            else:
+                print(f"Failed to send message {index}: {content}")
+            
+            human_like_browsing(driver)
+            random_sleep(time_delay_after_message_sent_min, time_delay_after_message_sent_max)
+            
+            # Check if 10 prompts have been sent
+            if prompt_count % 10 == 0:
+                delay_time = random.uniform(time_delay_after_10_prompts_min, time_delay_after_10_prompts_max)
+                print(f"10 prompts sent. Waiting for approximately {delay_time:.2f} seconds...")
+                random_sleep(time_delay_after_10_prompts_min, time_delay_after_10_prompts_max)
+        except Exception as e:
+            print(f"An error occurred: {e}")
+            print("Saving checkpoint and exiting...")
+            save_checkpoint(index)
+            driver.quit()
+            return
     
     print(f"Finished sending {prompt_count} prompts.")
     print("Exiting...")
     time.sleep(5)
     driver.quit()
-
 
 if __name__ == "__main__":
     main()
