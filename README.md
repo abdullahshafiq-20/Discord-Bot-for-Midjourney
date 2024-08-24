@@ -1,3 +1,5 @@
+--Updated to resume from the previous index in the event of an interruption, such as a verification process
+
 # 🤖 Discord AI Image Generator Bot
 
 Welcome to the Discord AI Image Generator Bot repository! This bot automates the process of generating AI images using Discord's `/imagine` command. 🎨✨
