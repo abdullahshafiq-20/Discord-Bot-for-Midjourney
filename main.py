@@ -2,7 +2,7 @@ import tkinter as tk
 from tkinter import filedialog
 import customtkinter as ctk
 import time
-import os
+import os, sys
 import random
 import pandas as pd
 import pickle
@@ -18,13 +18,35 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 import threading
 
+def resource_path(relative_path):
+    """ Get absolute path to resource, works for dev and for PyInstaller """
+    try:
+        # PyInstaller creates a temp folder and stores path in _MEIPASS
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(".")
+
+    return os.path.join(base_path, relative_path)
+
 class DiscordBotGUI:
     def __init__(self, master):
         self.master = master
         self.master.title("Discord Bot for Midjourney AI")
-        self.master.geometry("600x820")  # Increased height to accommodate new input
+        
+        # Set appearance mode and color theme
+        ctk.set_appearance_mode("light")
+        try:
+            ctk.set_default_color_theme(resource_path("color.json"))
+        except Exception as e:
+            print(f"Error loading color theme: {e}")
+            print("Falling back to default theme")
+        
+        icon_path = resource_path("bot.ico")
+        if os.path.exists(icon_path):
+            self.master.after(200, lambda: self.master.iconbitmap(icon_path))
+        self.master.geometry("600x820")
         self.bot_thread = None
-        self.stop_event = threading.Event()
+        self.stop_event = threading.Event() 
 
         self.create_widgets()
 
